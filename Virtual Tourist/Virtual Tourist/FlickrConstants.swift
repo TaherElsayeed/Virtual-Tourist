@@ -33,7 +33,8 @@ extension FlickrClient {
             static let Latitude = "lat"
             static let Longitude = "lon"
             static let Format = "format"
-             static let PerPage = "per_page"
+            static let PerPage = "per_page"
+            static let Page = "page"
             static let NoJSONCallback = "nojsoncallback"
         }
         
@@ -42,6 +43,13 @@ extension FlickrClient {
             static let FormatResponse = "json"
             static let DisableJSONCall = "1"
             static let PerPageNumber = 21
+        }
+        
+        struct JSONResponseKeys {
+            static let ID = "id"
+            static let FarmID = "farm"
+            static let ServerID = "server"
+            static let Secret = "secret"
         }
 
     }

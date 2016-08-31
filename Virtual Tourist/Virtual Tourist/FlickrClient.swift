@@ -38,6 +38,8 @@ class FlickrClient {
                 return
             }
             
+            self.convertDataWithCompletionHandler(data, completionHandlerForConvertedData: completionHandlerForGET)
+            
         }
         
         // start the request
@@ -48,7 +50,14 @@ class FlickrClient {
     }
     
     func convertDataWithCompletionHandler(data: NSData, completionHandlerForConvertedData: (result: AnyObject!, error: NSError?) -> Void) {
-        
+        var parsedResult: AnyObject!
+        do {
+            parsedResult = try NSJSONSerialization.JSONObjectWithData(data, options: .AllowFragments)
+        } catch {
+            let userInfo = [NSLocalizedDescriptionKey: "Could not parse the data as JSON"]
+            completionHandlerForConvertedData(result: nil, error: NSError(domain: "convertDataWithCompletionHandler", code: 1, userInfo: userInfo))
+        }
+        completionHandlerForConvertedData(result: parsedResult, error: nil)
     }
     
     // build the url
@@ -67,7 +76,6 @@ class FlickrClient {
             }
             
         }
-        print(components.URL!)
         return components.URL!
         
     }

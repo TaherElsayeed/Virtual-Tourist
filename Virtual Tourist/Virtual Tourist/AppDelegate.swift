@@ -13,6 +13,17 @@ import CoreData
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
+    
+//    func checkIfFirstLaunch() {
+//        if (NSUserDefaults.standardUserDefaults().boolForKey("HasLaunchedBefore")) {
+//            print("App has launched before")
+//        } else {
+//            print("This is the first launch ever")
+//            NSUserDefaults.standardUserDefaults().setBool(true, forKey: "HasLaunchedBefore")
+//            NSUserDefaults.standardUserDefaults().setDouble(0.0, forKey: "LatitudeValue")
+//            NSUserDefaults.standardUserDefaults().setDouble(0.0, forKey: "LongitudeValue")
+//        }
+//    }
 
 
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
