@@ -10,11 +10,14 @@ import UIKit
 import MapKit
 import CoreData
 
+private let reuseIdentifier = "PhotosCollectionCell"
+
 class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
     
     @IBOutlet weak var mapView: MKMapView!
+    @IBOutlet weak var collectionView: UICollectionView!
     
-    var numOfPhotos: Int!
+    var photosArray: [String]!
     var selectedPin: Pin!
     //photos array {
     //}//didset = call the function
@@ -23,6 +26,8 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         mapView.delegate = self
+//        collectionView.delegate = self
+//        collectionView.dataSource = self
         setUpMapView()
 
         // Do any additional setup after loading the view.
@@ -30,11 +35,12 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
         print(selectedPin)
+        collectionView.reloadData()
     }
     
     func setUpMapView() {
         let point = MKPointAnnotation()
-        point.coordinate = CLLocationCoordinate2DMake((selectedPin.latitude as? Double)!, (selectedPin.longitude as? Double)!)
+        point.coordinate = CLLocationCoordinate2DMake(selectedPin.latitude, selectedPin.longitude)
         mapView.addAnnotation(point)
         
         let span = MKCoordinateSpanMake(2, 2)
@@ -42,7 +48,35 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
         mapView.setRegion(region, animated: true)
     }
     
-    //collection view
+//    //collection view
+//    func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+////        return photosArray.count
+//    }
+//    
+//    func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
+//        let cell = collectionView.dequeueReusableCellWithReuseIdentifier(reuseIdentifier, forIndexPath: indexPath) as! PhotosCollectionViewCell
+//            _ = FlickrClient.sharedInstance().downloadImages(photosArray[indexPath.item]) { (data, error) in
+//            performUIUpdatesOnMain {
+//                if error == nil {
+//                    cell.imageView.image = UIImage(data: data!)
+//                }
+//            }
+//        }
+//        return cell
+//    }
+    
+//    func loadCellWithImage(cell: PhotosCollectionViewCell, indexPath: NSIndexPath) {
+//        
+//        FlickrClient.sharedInstance().downloadImages(photosArray[indexPath]) { (data, error) in
+//            guard (error == nil) else {
+//                print("couldn't download the images")
+//                return
+//            }
+//            
+//        }
+//    }
+//    
+    
     // data source = photos array // show some messgae
     // numberofitems = count of photos array
     

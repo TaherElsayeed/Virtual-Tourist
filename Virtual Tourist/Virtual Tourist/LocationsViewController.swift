@@ -10,27 +10,27 @@ import UIKit
 import MapKit
 import CoreData
 
-class LocationsViewController: UIViewController, MKMapViewDelegate {
+class LocationsViewController: UIViewController, MKMapViewDelegate, NSFetchedResultsControllerDelegate {
     
-    // MARK: Model
     
-    var managedObjectContext: NSManagedObjectContext? = (UIApplication.sharedApplication().delegate as? AppDelegate)?.managedObjectContext
     var savedRegion: MKCoordinateRegion?
+    var mapRegionSet = false
     
     @IBOutlet weak var mapView: MKMapView!
-    var pins = [Pin]()
+
     var selectedPin: Pin?
-    var imageURLs: [String]?
     
-    //viewWillDisappear
-    override func viewWillDisappear(animated: Bool) {
-        super.viewWillDisappear(animated)
-        NSUserDefaults.standardUserDefaults().setDouble((selectedPin?.coordinate.latitude)!, forKey: "LatitudeValue")
-        NSUserDefaults.standardUserDefaults().setDouble((selectedPin?.coordinate.longitude)!, forKey: "LongitudeValue")
+    // shared context
+    let stack = CoreDataStack.sharedInstance
+
+    
+    override func viewWillAppear(animated: Bool) {
+        super.viewWillAppear(animated)
+//        if savedRegion != nil {
+//            mapView.region = savedRegion!
+//            mapView.setCenterCoordinate(savedRegion!.center, animated: true)
+//        }
     }
-    // NSUSerdefaults ->
-    // dictioanry -> key = "lastZomedpoint" .> value
-    // ["lat":23 ,"lon" :34 , delat:dsf, ]
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -41,99 +41,58 @@ class LocationsViewController: UIViewController, MKMapViewDelegate {
         longPressRecognizer.minimumPressDuration = 1.0
         mapView.addGestureRecognizer(longPressRecognizer)
         
-        // check for saved map information
-        if let mapInfo = NSUserDefaults.standardUserDefaults().dictionaryForKey("mapInfo") as? [String: CLLocationDegrees] {
-            let centerLatitude = mapInfo[ "centerLatitude" ]!
-            let centerLongitude = mapInfo[ "centerLongitude" ]!
-            let spanLatDelta = mapInfo[ "spanLatitudeDelta" ]!
-            let spanLongDelta = mapInfo[ "spanLongitudeDelta" ]!
-            
-            let newMapRegion = MKCoordinateRegion(
-                center: CLLocationCoordinate2D(
-                    latitude: centerLatitude,
-                    longitude: centerLongitude
-                ),
-                span: MKCoordinateSpan(
-                    latitudeDelta: spanLatDelta,
-                    longitudeDelta: spanLongDelta
-                )
-            )
-            
-            savedRegion = newMapRegion
-        }
-        
-        // retireve the value NSUSerdefaults
-        // dictionaty => dictioanry
-        //        if let dict = values from NSUserdfaults "lastZomedpoint"{
-        //            dict[lat]
-        //        }
-        //mpaview -> values
-        
+        // set up the map
+        setUpMap()
 
     }
     
-    override func viewWillAppear(animated: Bool) {
-        super.viewWillAppear(animated)
-        if savedRegion != nil {
-            mapView.region = savedRegion!
-            mapView.setCenterCoordinate(savedRegion!.center, animated: true)
+    override func viewDidAppear(animated: Bool) {
+        super.viewDidAppear(animated)
+        if !mapRegionSet {
+            setMapToLastPosition()
+        }
+        
+    }
+    
+
+    
+    func setMapToLastPosition() {
+        if let savedRegion = savedRegion {
+            mapView.region = savedRegion
+            mapRegionSet = true
         }
     }
     
+    func setUpMap() {
+        getSavedInfoForMap()
+        if savedRegion != nil && mapRegionSet {
+            mapView.centerCoordinate = (savedRegion?.center)!
+        }
+    }
+
     func mapView(mapView: MKMapView, viewForAnnotation annotation: MKAnnotation) -> MKAnnotationView? {
         let reuseId = "pin"
         var pinView = mapView.dequeueReusableAnnotationViewWithIdentifier(reuseId) as? MKPinAnnotationView
         if pinView == nil {
             pinView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: reuseId)
-            pinView!.canShowCallout = true
+            pinView?.animatesDrop = true
+            // no need for a title
+            pinView!.canShowCallout = false
             pinView!.pinTintColor = UIColor.redColor()
         } else {
             pinView!.annotation = annotation
+            pinView?.animatesDrop = true
         }
         return pinView
     }
     
     func mapView(mapView: MKMapView, didSelectAnnotationView view: MKAnnotationView) {
-        mapView.deselectAnnotation(view.annotation, animated: true)
-        guard let annotation = view.annotation else { return }
-        for pin in pins {
-            if annotation.coordinate.latitude == pin.latitude {
-                selectedPin = pin
-            }
-        }
-        
-        // first get the list of images
-        print("deselect")
-        //get the images = not the actual image data
-        //flickr.photos.search => response =>
-        // tag, imageURL
-        
-        // get the response => create the photo Objects (NSManagedObject)
-        FlickrClient.sharedInstance().searchPhotoByLocation((selectedPin?.coordinate.latitude)!, longitude: selectedPin!.coordinate.longitude) { (result, error) in
-            performUIUpdatesOnMain() {
-                if error == nil {
-                    let photosArray = result
-                    //create the photos entites here
-                    // on the main ->
-                    let PhotoAlbumVC = self.storyboard?.instantiateViewControllerWithIdentifier("PhotoAlbumVC") as! PhotoAlbumViewController
-                    PhotoAlbumVC.selectedPin = self.selectedPin
-                    PhotoAlbumVC.numOfPhotos = photosArray?.count
-                    print(photosArray?.count)
-
-                    print("storyboard created")
-                    self.navigationController?.pushViewController(PhotoAlbumVC, animated: true)
-                } else {
-                    print("error occured")
-                }
-
-            }
-       }
-//        let PhotoAlbumVC = self.storyboard?.instantiateViewControllerWithIdentifier("PhotoAlbumVC") as! PhotoAlbumViewController
-//        PhotoAlbumVC.selectedPin = selectedPin
-//        print("storyboard created")
-//        navigationController?.pushViewController(PhotoAlbumVC, animated: true)
+        guard let pin = view.annotation as? Pin else { return }
+        mapView.deselectAnnotation(pin, animated: false)
+        performSegueWithIdentifier("showPhotoAlbumVC", sender: pin)
     }
     
+    // keep updating and store the map values for the region
     func mapView(mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
         // record the map region info
         let mapRegionCenterLatitude: CLLocationDegrees = mapView.region.center.latitude
@@ -150,24 +109,45 @@ class LocationsViewController: UIViewController, MKMapViewDelegate {
         
         // save to NSUserDefaults
         NSUserDefaults.standardUserDefaults().setObject(mapDictionary, forKey: "mapInfo")
+        NSUserDefaults.standardUserDefaults().synchronize()
+
     }
     
+    
+    func getSavedInfoForMap() {
+        if let mapInfo = NSUserDefaults.standardUserDefaults().dictionaryForKey("mapInfo") as? [String: CLLocationDegrees] {
+            let centerLatitude = mapInfo[ "centerLatitude" ]!
+            let centerLongitude = mapInfo[ "centerLongitude" ]!
+            let spanLatDelta = mapInfo[ "spanLatitudeDelta" ]!
+            let spanLongDelta = mapInfo[ "spanLongitudeDelta" ]!
+            
+            let newMapRegion = MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: centerLatitude, longitude: centerLongitude),span: MKCoordinateSpan(latitudeDelta: spanLatDelta,longitudeDelta: spanLongDelta))
+                savedRegion = newMapRegion
+        }
+    }
+  // prepare to show the PhotoAlbumViewController
+    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+        if segue.identifier == "showPhotoAlbumVC" {
+            // the sender is the actual pin object
+            let pin = sender as? Pin
+            let PhotoAlbumVC = segue.destinationViewController as? PhotoAlbumViewController
+            PhotoAlbumVC?.selectedPin = pin
+        }
+    }
     
     func dropPin(gestureRecognizer: UIGestureRecognizer) {
         if gestureRecognizer.state != .Began { return }
     
         let touchPoint = gestureRecognizer.locationInView(self.mapView)
         let touchMapCoordinate = mapView.convertPoint(touchPoint, toCoordinateFromView: mapView)
-        let annotation = MKPointAnnotation()
-        annotation.title = "pin"
-        annotation.coordinate = touchMapCoordinate
-        
-        let newPin = Pin(latitude: annotation.coordinate.latitude, longitude: annotation.coordinate.longitude, context: managedObjectContext!)
+        let annotation = Pin(latitude: touchMapCoordinate.latitude, longitude: touchMapCoordinate.longitude, context: (stack?.context)!)
+        // save
+        do {
+            try stack?.saveContext()
+        } catch {
+            print("couldn't save the pin")
+        }
         mapView.addAnnotation(annotation)
-        pins.append(newPin)
-        
-        //save
-        // mamnagedObjectContext
     }
 
 }

@@ -145,7 +145,22 @@ extension FlickrClient {
         return photoURLs
     }
     
-    
+    func downloadImages(url: String, completionHandlerForDownloadImages: (data: NSData?, error: NSError?) -> Void) {
+        let url = NSURL(string: url)
+        let task = NSURLSession.sharedSession().dataTaskWithURL(url!) { data, response, error in
+            guard (error == nil) else {
+                return completionHandlerForDownloadImages(data: nil, error: error)
+            }
+            
+            guard let data = data else {
+                return completionHandlerForDownloadImages(data: nil, error: error)
+            }
+            
+            print("images: \(data)")
+            completionHandlerForDownloadImages(data: data, error: nil)
+        }
+        task.resume()
+    }
     
     
     

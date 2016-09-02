@@ -11,21 +11,19 @@ import CoreData
 import MapKit
 
 
-class Pin: NSManagedObject {
+class Pin: NSManagedObject, MKAnnotation {
     
-    init(latitude: Double, longitude: Double, context: NSManagedObjectContext) {
-        if let pin = NSEntityDescription.entityForName("Pin", inManagedObjectContext: context) {
-            super.init(entity: pin, insertIntoManagedObjectContext: context)
-            
+    var coordinate: CLLocationCoordinate2D {
+        return CLLocationCoordinate2DMake(latitude, longitude)
+    }
+    
+    convenience init(latitude: Double, longitude: Double, context: NSManagedObjectContext) {
+        if let ent = NSEntityDescription.entityForName("Pin", inManagedObjectContext: context) {
+            self.init(entity: ent, insertIntoManagedObjectContext: context)
             self.latitude = latitude
             self.longitude = longitude
         } else {
             fatalError("Error")
         }
     }
-    
-    var coordinate: CLLocationCoordinate2D {
-        return CLLocationCoordinate2D(latitude: (self.latitude as? Double)!, longitude: (self.longitude as? Double)!)
-    }
-
 }

@@ -14,8 +14,8 @@ import CoreData
 
 extension Pin {
 
-    @NSManaged var latitude: NSNumber?
-    @NSManaged var longitude: NSNumber?
+    @NSManaged var latitude: Double
+    @NSManaged var longitude: Double
     @NSManaged var photos: NSSet?
 
 }
