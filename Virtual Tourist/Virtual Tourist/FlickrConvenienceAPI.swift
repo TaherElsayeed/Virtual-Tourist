@@ -10,7 +10,7 @@ import Foundation
 
 extension FlickrClient {
     
-    func searchPhotoByLocation(latitude: Double, longitude: Double, completionHandlerForSearch: (result: AnyObject?, error: NSError?) -> Void) {
+    func searchPhotoByLocation(latitude: Double, longitude: Double, completionHandlerForSearch: (result: [String]?, error: NSError?) -> Void) {
         
         
         // maxPages = 400 / each page =100 (total = 4000)
@@ -24,7 +24,6 @@ extension FlickrClient {
             Constants.FlickrParameterKeys.Format: Constants.FlickrParameterValues.FormatResponse,
             Constants.FlickrParameterKeys.PerPage: Constants.FlickrParameterValues.PerPageNumber,
             Constants.FlickrParameterKeys.NoJSONCallback: Constants.FlickrParameterValues.DisableJSONCall
-//            FlickrClient.FlickrParameterKeys.PerPage : FlickrClient.FlickrParameterValues.PerPageNumber
         ]
         
         taskForGetMethod("", parameters: parameters) { (result, error) in
@@ -34,57 +33,40 @@ extension FlickrClient {
             }
             
             guard let result = result else {
-                print("sorry we didn't get the result from search")
+//                print("sorry we didn't get the result from search")
                 return
             }
             
             guard let photosArray = result["photos"] as? [String: AnyObject] else {
                 completionHandlerForSearch(result: nil, error: error)
-                print("couldn't find the photos key")
+//                print("couldn't find the photos key")
                 return
             }
             
             guard let totalPages = photosArray["pages"] as? Int else {
-                print("We could not find the 'pages' key in \(photosArray["pages"])")
+//                print("We could not find the 'pages' key in \(photosArray["pages"])")
                 return
             }
             
-            print("the total pages are \(totalPages) pages")
-
-            
-//            guard let photoArray = photosArray["photo"] as? [[String:AnyObject]] else {
-//                completionHandlerForSearch(result: nil, error: error)
-//                print("couldn't find the 'photo' key in \(photosArray["photo"])")
-//                return
-//            }
-            
             let pageLimit = min(totalPages, 40)
-            print("page limit is \(pageLimit)")
+//            print("page limit is \(pageLimit)")
             
             let randomPage = Int(arc4random_uniform(UInt32(pageLimit))) + 1
-            print(randomPage)
+//            print("random page: \(randomPage)")
             
             FlickrClient.sharedInstance().searchPhotoByLocationWithRandomPage(latitude, longitude: longitude, page: randomPage, completionHandlerForSearchWithPage: { (result, error) in
                 guard (error == nil) else {
-                    print("no pics with search and random number")
+//                    print("no pics with search and random number")
                     return
                 }
                 
-                if let results = result {
-                    let photoLinks = results as? [String]
-                    print(photoLinks)
-                    completionHandlerForSearch(result: photoLinks, error: nil)
-                }
+                completionHandlerForSearch(result: result, error: nil)
                 
             })
-            
-            //json response  - array of dict // parsed
-            //photo.location = pin's location'
-            //[phots]
         }
     }
     
-    func searchPhotoByLocationWithRandomPage(latitude: Double, longitude: Double, page: Int, completionHandlerForSearchWithPage: (result: AnyObject?, error: NSError?) -> Void) {
+    func searchPhotoByLocationWithRandomPage(latitude: Double, longitude: Double, page: Int, completionHandlerForSearchWithPage: (result: [String]?, error: NSError?) -> Void) {
         let parameters: [String:AnyObject] = [
             Constants.FlickrParameterKeys.Method: Constants.Method.PhotoSearch,
             Constants.FlickrParameterKeys.ApiKey: Constants.FlickrParameterValues.APIKey,
@@ -99,24 +81,24 @@ extension FlickrClient {
         taskForGetMethod("", parameters: parameters) { (result, error) in
             guard (error == nil) else {
                 completionHandlerForSearchWithPage(result: nil, error: error)
-                print("\(error?.userInfo)")
+//                print("\(error?.userInfo)")
                 return
             }
             
             guard let result = result else {
-                print("Sorry we didnt get a result from searchByPhoto")
+//                print("Sorry we didnt get a result from searchByPhoto")
                 return
             }
             
             guard let photosArray = result["photos"] as? [String : AnyObject] else {
                 completionHandlerForSearchWithPage(result: nil, error: error)
-                print("We could not find the 'photos' key in \(result["photos"])")
+//                print("We could not find the 'photos' key in \(result["photos"])")
                 return
             }
             
             guard let photoArray = photosArray["photo"] as? [[String:AnyObject]] else {
                 completionHandlerForSearchWithPage(result: nil, error: error)
-                print("We could not find the 'photo' key in \(photosArray["photo"])")
+//                print("We could not find the 'photo' key in \(photosArray["photo"])")
                 return
             }
             
@@ -137,17 +119,16 @@ extension FlickrClient {
                    secret = photoURL[Constants.JSONResponseKeys.Secret]
             {
                 let imageURL = "https://farm\(farmID).staticflickr.com/\(serverID)/\(id)_\(secret).jpg"
-                print(imageURL)
                 photoURLs.append(imageURL)
             }
             
         }
+//        print("this is the photo urls: \(photoURLs)")
         return photoURLs
     }
     
-    func downloadImages(url: String, completionHandlerForDownloadImages: (data: NSData?, error: NSError?) -> Void) {
-        let url = NSURL(string: url)
-        let task = NSURLSession.sharedSession().dataTaskWithURL(url!) { data, response, error in
+    func downloadImages(url: NSURL, completionHandlerForDownloadImages: (data: NSData?, error: NSError?) -> Void) {
+        let task = NSURLSession.sharedSession().dataTaskWithURL(url) { data, response, error in
             guard (error == nil) else {
                 return completionHandlerForDownloadImages(data: nil, error: error)
             }
@@ -156,7 +137,7 @@ extension FlickrClient {
                 return completionHandlerForDownloadImages(data: nil, error: error)
             }
             
-            print("images: \(data)")
+            //print("images: \(data)")
             completionHandlerForDownloadImages(data: data, error: nil)
         }
         task.resume()

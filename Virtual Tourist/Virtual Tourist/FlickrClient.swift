@@ -22,19 +22,19 @@ class FlickrClient {
             
             // was there an error
             guard (error == nil) else {
-                print("error with get method")
+                // print("error with get method")
                 return
             }
             
             // did we get a successful 2xx response
             guard let statusCode = (response as? NSHTTPURLResponse)?.statusCode where statusCode >= 200 && statusCode <= 299 else {
-                print("statusCode error")
+                // print("statusCode error")
                 return
             }
             
             // was there any data returned
             guard let data = data else {
-                print("no data")
+               // print("no data")
                 return
             }
             

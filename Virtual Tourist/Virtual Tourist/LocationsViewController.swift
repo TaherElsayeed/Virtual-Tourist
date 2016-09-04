@@ -15,22 +15,14 @@ class LocationsViewController: UIViewController, MKMapViewDelegate, NSFetchedRes
     
     var savedRegion: MKCoordinateRegion?
     var mapRegionSet = false
+    var pin = [Pin]()
     
     @IBOutlet weak var mapView: MKMapView!
 
     var selectedPin: Pin?
     
-    // shared context
+    // shared CoreDataStack
     let stack = CoreDataStack.sharedInstance
-
-    
-    override func viewWillAppear(animated: Bool) {
-        super.viewWillAppear(animated)
-//        if savedRegion != nil {
-//            mapView.region = savedRegion!
-//            mapView.setCenterCoordinate(savedRegion!.center, animated: true)
-//        }
-    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -43,6 +35,9 @@ class LocationsViewController: UIViewController, MKMapViewDelegate, NSFetchedRes
         
         // set up the map
         setUpMap()
+        
+        // retrieve pins if any
+        retrievePins()
 
     }
     
@@ -53,8 +48,6 @@ class LocationsViewController: UIViewController, MKMapViewDelegate, NSFetchedRes
         }
         
     }
-    
-
     
     func setMapToLastPosition() {
         if let savedRegion = savedRegion {
@@ -67,6 +60,22 @@ class LocationsViewController: UIViewController, MKMapViewDelegate, NSFetchedRes
         getSavedInfoForMap()
         if savedRegion != nil && mapRegionSet {
             mapView.centerCoordinate = (savedRegion?.center)!
+        }
+    }
+    
+    // get the pins
+    func retrievePins() {
+        let fetchRequest = NSFetchRequest(entityName: "Pin")
+        do {
+            let pinResults = try stack?.context.executeFetchRequest(fetchRequest) as? [Pin]
+            if let pinResults = pinResults {
+                pin = pinResults
+                let annotations = mapView.annotations
+                mapView.removeAnnotations(annotations)
+                mapView.addAnnotations(pin)
+            }
+        } catch {
+            print("couldn't retrieve pins")
         }
     }
 
