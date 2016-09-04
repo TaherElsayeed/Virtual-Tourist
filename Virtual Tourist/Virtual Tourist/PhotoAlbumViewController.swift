@@ -99,8 +99,7 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate, NSFetchedRe
                     for photoLink in photoLinks {
                         let imageURL = photoLink
                         // results of initializers are unused
-                        let checkPhotos = Photo(imageURL: imageURL, location: self.selectedPin, context: (self.stack?.context)!)
-                        print(checkPhotos)
+                        _ = Photo(imageURL: imageURL, location: self.selectedPin, context: (self.stack?.context)!)
                     }
                     
                     do {
